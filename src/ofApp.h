@@ -30,6 +30,11 @@ class ofApp : public ofBaseApp{
     
         ofxBulletSphere *       sphere;
         bool                    bColliding;
+        vector <ofxBulletBox*>  bounds;
+        ofxBulletCustomShape*   boundsShape;
+        ofMaterial              boundsMat;
+        float                   boundsWidth;
+    bool bDropBox;
     
         pdsp::Engine            engine;
         pdsp::VAOscillator      osc;

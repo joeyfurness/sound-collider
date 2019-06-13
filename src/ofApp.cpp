@@ -8,6 +8,7 @@ void ofApp::setup(){
     
     // Set up Bullet Physics
     
+
     camera.setPosition(ofVec3f(0, -7.f, -10.f));
     camera.lookAt(ofVec3f(0, 0, 0), ofVec3f(0, -1, 0));
     
@@ -26,9 +27,45 @@ void ofApp::setup(){
     sphere->create(world.world, ofVec3f(7, 0, 0), 0.1, 0.25);
     sphere->add();
     
-    ground.create(world.world, ofVec3f(0., 5.5, 0.), 10., 100.f, 1.f, 100.f);
-    ground.setProperties(0.25, 0.95);
-    ground.add();
+    ofVec3f startLoc;
+    ofPoint dimens;
+    boundsWidth = 30.;
+    float hwidth = boundsWidth*.5;
+    float depth = 2.;
+    float hdepth = depth*.5;
+    boundsShape = new ofxBulletCustomShape();
+    boundsShape->create(world.world, ofVec3f(0, 0, 0), 10.);
+    
+    for(int i = 0; i < 6; i++) {
+        bounds.push_back( new ofxBulletBox() );
+        if(i == 0) { // ground //
+            startLoc.set( 0., hwidth+hdepth, 0. );
+            dimens.set(boundsWidth, depth, boundsWidth);
+        } else if (i == 1) { // back wall //
+            startLoc.set(0, 0, hwidth+hdepth);
+            dimens.set(boundsWidth, boundsWidth, depth);
+        } else if (i == 2) { // right wall //
+            startLoc.set(hwidth+hdepth, 0, 0.);
+            dimens.set(depth, boundsWidth, boundsWidth);
+        } else if (i == 3) { // left wall //
+            startLoc.set(-hwidth-hdepth, 0, 0.);
+            dimens.set(depth, boundsWidth, boundsWidth);
+        } else if (i == 4) { // ceiling //
+            startLoc.set(0, -hwidth-hdepth, 0.);
+            dimens.set(boundsWidth, depth, boundsWidth);
+        } else if (i == 5) { // front wall //
+            startLoc.set(0, 0, -hwidth-hdepth);
+            dimens.set(boundsWidth, boundsWidth, depth);
+        }
+        btBoxShape* boxShape = ofBtGetBoxCollisionShape( dimens.x, dimens.y, dimens.z );
+        boundsShape->addShape( boxShape, startLoc );
+        
+        bounds[i]->create( world.world, startLoc, 0., dimens.x, dimens.y, dimens.z );
+        bounds[i]->setProperties(.25, .95);
+        bounds[i]->add();
+    }
+    
+    bDropBox = false;
     
     // Set up Audio Patch
     
@@ -46,7 +83,7 @@ void ofApp::setup(){
 //    0.5f    >> env.in_sustain();
     500.0f  >> env.in_release();
     
-    pitch_ctrl.set(72.0f);
+    pitch_ctrl.set(40.0f);
     
     // Set up Audio
     engine.listDevices();
@@ -72,8 +109,20 @@ void ofApp::draw(){
     ofSetColor(255, 0, 200);
     world.drawDebug();
     
-    ofSetColor(100, 100, 100);
-    ground.draw();
+    ofSetColor(0, 0, 0);
+    if(!bDropBox) {
+        boundsMat.begin();
+        for(int i = 0; i < bounds.size()-1; i++) {
+            bounds[i]->draw();
+        }
+        boundsMat.end();
+    } else {
+        ofNoFill();
+        boundsShape->transformGL();
+        ofDrawBox(ofVec3f(0, 0,0), boundsWidth);
+        boundsShape->restoreTransformGL();
+        ofFill();
+    }
     
     ofSetColor(255, 255, 255);
     sphere->draw();
