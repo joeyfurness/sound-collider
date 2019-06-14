@@ -3,7 +3,8 @@
 #include "ofMain.h"
 #include "ofxBullet.h"
 #include "ofxPDSP.h"
-
+#include "ofxGui.h"
+#include "ofFbo.h"
 class ofApp : public ofBaseApp{
 
 	public:
@@ -34,15 +35,26 @@ class ofApp : public ofBaseApp{
         ofxBulletCustomShape*   boundsShape;
         ofMaterial              boundsMat;
         float                   boundsWidth;
-    bool bDropBox;
     
         pdsp::Engine            engine;
         pdsp::VAOscillator      osc;
         pdsp::LFO               lfo;
         pdsp::Amp               amp;
-        pdsp::AHR              env;
+        pdsp::AHR               env;
+        pdsp::Panner            pan;
+        pdsp::BasiVerb          verb;
         pdsp::TriggerControl    gate_ctrl;
         pdsp::ValueControl      pitch_ctrl;
+        pdsp::ValueControl      pan_ctrl;
+    
+    bool verbEnable;
+    
+//        pdsp::Parameter         verb_amt;
+//        pdsp::Parameter         verb_time;
+//        pdsp::Parameter         verb_filter;
+    
+//        ofParameterGroup        verb_group;
+//        ofxPanel gui;
     
         ofCamera camera;
     

@@ -9,7 +9,7 @@ void ofApp::setup(){
     // Set up Bullet Physics
     
 
-    camera.setPosition(ofVec3f(0, -7.f, -10.f));
+    camera.setPosition(ofVec3f(0, -3.f, -40.f));
     camera.lookAt(ofVec3f(0, 0, 0), ofVec3f(0, -1, 0));
     
     world.setup();
@@ -24,7 +24,8 @@ void ofApp::setup(){
     world.setGravity(ofVec3f(0, 0, 0));
     
     sphere = new ofxBulletSphere();
-    sphere->create(world.world, ofVec3f(7, 0, 0), 0.1, 0.25);
+    sphere->create(world.world, ofVec3f(0, 0, 0), 0.5, 2.5);
+    sphere->setProperties(0.75, 0.5);
     sphere->add();
     
     ofVec3f startLoc;
@@ -61,22 +62,28 @@ void ofApp::setup(){
         boundsShape->addShape( boxShape, startLoc );
         
         bounds[i]->create( world.world, startLoc, 0., dimens.x, dimens.y, dimens.z );
-        bounds[i]->setProperties(.25, .95);
+        bounds[i]->setProperties(0.75, 0.5);
         bounds[i]->add();
     }
-    
-    bDropBox = false;
     
     // Set up Audio Patch
     
     gate_ctrl.out_trig() >> env;
                             env >> amp.in_mod();
     
+    pan_ctrl >> pan.in_pan();
+    pan_ctrl.set(0.0f);
+    
+//    verb_amt >> verb.in_density();
+//    verb_time >> verb.in_time();
+//    verb_filter >> verb.in_hi_cut();
+    
     pitch_ctrl >> osc.in_pitch();
-                  osc >> amp * dB(-12.0f) >> engine.audio_out(0);
-                         amp * dB(-12.0f) >> engine.audio_out(1);
-    
-    
+                  //osc >> amp * dB(-12.0f) >> pan >> engine.audio_out(0);
+                  //       amp * dB(-12.0f) >> pan >> engine.audio_out(1);
+    osc >> amp * dB(-12.0f) >> pan;
+    pan.out_L() >> engine.audio_out(0);
+    pan.out_R() >> engine.audio_out(1);
     
     0.0f    >> env.in_attack();
 //    50.0f   >> env.in_decay();
@@ -84,6 +91,17 @@ void ofApp::setup(){
     500.0f  >> env.in_release();
     
     pitch_ctrl.set(40.0f);
+    verbEnable = true;
+    
+    //Set up GUI !! This isnt working because of some OpenGL stuff
+//    gui.setup();
+//    verb_group.setName("reverb");
+//    verb_group.add(verb_amt.set("density", 0.5, 0.0, 1.0));
+//    verb_group.add(verb_time.set("time", 1.0, 0.0, 5.0));
+//    verb_group.add(verb_filter.set("filter", 1.0, 0.0, 1.0));
+//    gui.add(verb_group);
+    
+    ofBackground(0);
     
     // Set up Audio
     engine.listDevices();
@@ -102,27 +120,21 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+    //gui.draw();
     glEnable(GL_DEPTH_TEST);
     camera.begin();
     
-    ofSetLineWidth(1.f);
+    ofSetLineWidth(2.f);
     ofSetColor(255, 0, 200);
     world.drawDebug();
     
+    ofNoFill();
     ofSetColor(0, 0, 0);
-    if(!bDropBox) {
-        boundsMat.begin();
-        for(int i = 0; i < bounds.size()-1; i++) {
-            bounds[i]->draw();
-        }
-        boundsMat.end();
-    } else {
-        ofNoFill();
-        boundsShape->transformGL();
-        ofDrawBox(ofVec3f(0, 0,0), boundsWidth);
-        boundsShape->restoreTransformGL();
-        ofFill();
+    boundsMat.begin();
+    for(int i = 0; i < bounds.size()-1; i++) {
+        bounds[i]->draw();
     }
+    boundsMat.end();
     
     ofSetColor(255, 255, 255);
     sphere->draw();
@@ -133,6 +145,11 @@ void ofApp::draw(){
 void ofApp::onCollision(ofxBulletCollisionData& cdata) {
     if(*sphere == cdata) {
         std::cout << "Collided!" << std::endl;
+        std::cout << "Sphere Position (y): " << sphere->getPosition().y << std::endl;
+        float mapPitch = ofMap(sphere->getPosition().y, -15.0f, 15.0f, 0.0f, 100.0f);
+        float mapPan = ofMap(sphere->getPosition().x, -15.0f, 15.0f, -1.0f, 1.0f);
+        pitch_ctrl.set(mapPitch);
+        pan_ctrl.set(mapPan);
         gate_ctrl.trigger(1.0f);
         //pitch_ctrl.set(cdata.body1->getTotalForce().length());
 
@@ -143,7 +160,9 @@ void ofApp::onCollision(ofxBulletCollisionData& cdata) {
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-
+    if (key == 'v') {
+        verbEnable = !verbEnable;
+    }
 }
 
 //--------------------------------------------------------------
