@@ -16,4 +16,4 @@ Compile openframeworks onto your operating system
 Download the dependencies listed
 Compile using the openframeworks "ProjectGenerator"
 
-(I also have a Mac build available)
+(There is a Mac build available in bin)
